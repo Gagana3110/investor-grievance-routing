@@ -1,6 +1,6 @@
 # Investor Grievance Routing Service
 
-A student project starter for the PESU UE24AM342AA5 Mini Project 12. It is designed to grow into a multi-agent, evidence-grounded routing service. It does **not** make legal decisions: outputs are recommendations for a human grievance officer.
+It is designed to grow into a multi-agent, evidence-grounded routing service. It does **not** make legal decisions: outputs are recommendations for a human grievance officer.
 
 ## Stack
 - FastAPI API + background run/status endpoints
