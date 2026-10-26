@@ -1,0 +1,11 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+node_modules/
+dist/
+corpus/raw/*
+!corpus/raw/.gitkeep
+corpus/processed/*
+!corpus/processed/.gitkeep

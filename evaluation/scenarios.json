@@ -1,0 +1,4 @@
+[
+ {"id":"FD-001","complaint":"I invested in a fixed deposit through my bank's app. The interest credited is lower than what I was promised. I want to complain to SEBI.","expected_route":"human_escalation_until_corpus_verified","must_not":"invent a citation or timeline","notes":"Assignment's difficult case. Confirm exact passages in official RBI scheme and product/entity facts before final routing."},
+ {"id":"UNK-001","complaint":"My financial product complaint concerns a provider not represented in the loaded corpus.","expected_route":"human_escalation","must_not":"guess jurisdiction"}
+]
