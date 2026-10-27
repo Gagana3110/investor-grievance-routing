@@ -6,7 +6,8 @@ from fastapi import FastAPI, HTTPException, Response
 from fastapi.responses import JSONResponse
 from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
 from .schemas import ComplaintRequest, RoutingResult
-
+from .schemas import ComplaintRequest, RoutingResult
+from .graph import routing_graph
 app = FastAPI(title="Investor Grievance Routing Service", version="0.1.0",
               description="Evidence-grounded routing recommendations for human review; not a complaint adjudication service.")
 executor = ThreadPoolExecutor(max_workers=3)
@@ -17,30 +18,40 @@ REQUESTS = Counter("complaint_submissions_total", "Complaint submissions", ["out
 
 
 def process_complaint(run_id: str, complaint: ComplaintRequest):
-    """Safe placeholder: never assert jurisdiction without loaded, verified corpus passages."""
+    """Run the LangGraph workflow and safely store its result."""
     try:
-        text = complaint.complaint_text.lower()
-        # This is a triage hint only, deliberately not a regulatory conclusion.
-        bank_terms = ("fixed deposit", "bank deposit", "bank's app", "bank app")
-        possible_bank_product = any(term in text for term in bank_terms)
+        output = routing_graph.invoke({
+            "complaint_text": complaint.complaint_text,
+            "entity_name": complaint.entity_name,
+        })
+
+        data = output["result"]
+
         result = RoutingResult(
-            status="needs_human_review",
-            route_type="human_escalation",
-            recommended_regulator=None,
-            responsible_entity=complaint.entity_name,
-            timeline=None,
-            reason=("The complaint mentions a possible banking product. Verify the product and applicable official scheme in the regulatory corpus before routing."
-                    if possible_bank_product else
-                    "No verified corpus-backed routing is available in this starter build. Retrieve and verify applicable provisions before recommending a route."),
+            status=data["status"],
+            route_type=data["route_type"],
+            recommended_regulator=data.get("recommended_regulator"),
+            responsible_entity=data.get("responsible_entity"),
+            reason=data["reason"],
             citations=[],
-            escalation_reason="Starter build has no verified regulatory index yet; do not infer a route without source passages.",
-            human_review_required=True,
+            escalation_reason=data.get("escalation_reason"),
+            human_review_required=data["human_review_required"],
         )
+
         with lock:
-            runs[run_id] = {"status": "completed", "result": result.model_dump(mode="json"), "created_at": datetime.now(timezone.utc).isoformat()}
-    except Exception as exc:
+            runs[run_id] = {
+                "status": "completed",
+                "result": result.model_dump(mode="json"),
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            }
+
+    except Exception:
         with lock:
-            runs[run_id] = {"status": "failed", "error": type(exc).__name__}
+            runs[run_id] = {
+                "status": "failed",
+                "error": "Complaint processing failed. Please retry or escalate."
+            }
+           
 
 @app.get("/health")
 def health():

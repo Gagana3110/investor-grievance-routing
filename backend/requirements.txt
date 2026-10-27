@@ -4,3 +4,6 @@ pydantic>=2.8,<3
 redis>=5,<6
 python-multipart>=0.0.9
 prometheus-client>=0.20
+
+langgraph
+langchain-core
