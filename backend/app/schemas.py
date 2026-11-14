@@ -1,6 +1,8 @@
+
 from datetime import datetime, timezone
 from enum import Enum
 from pydantic import BaseModel, Field, field_validator
+
 
 class EntityDomain(str, Enum):
     broker = "broker"
@@ -10,6 +12,7 @@ class EntityDomain(str, Enum):
     depository = "depository"
     bank_or_other = "bank_or_other"
     unknown = "unknown"
+
 
 class ComplaintRequest(BaseModel):
     complaint_text: str = Field(min_length=20, max_length=8000)
@@ -26,12 +29,14 @@ class ComplaintRequest(BaseModel):
             raise ValueError("complaint_text must not be blank")
         return value.strip()
 
+
 class Citation(BaseModel):
     source_title: str
     source_version: str
     section: str
     passage: str
     source_url: str | None = None
+
 
 class RoutingResult(BaseModel):
     status: str
@@ -40,7 +45,7 @@ class RoutingResult(BaseModel):
     responsible_entity: str | None = None
     timeline: str | None = None
     reason: str
-    citations: list[Citation] = []
+    citations: list[Citation] = Field(default_factory=list)
     escalation_reason: str | None = None
     human_review_required: bool = True
     prompt_version: str = "routing-v0.1"

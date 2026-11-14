@@ -1,8 +1,8 @@
 from typing import Any, TypedDict
 from langgraph.graph import END, START, StateGraph
 
-from app.agents.investigator import investigator_node
-from app.agents.reviewer import reviewer_node
+from backend.app.agents.investigator import investigator_node
+from backend.app.agents.reviewer import reviewer_node
 
 
 class RoutingState(TypedDict, total=False):
