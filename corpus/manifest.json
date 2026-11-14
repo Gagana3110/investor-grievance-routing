@@ -1,1 +1,42 @@
-{"documents":[],"note":"Populate with official source title, URL, version/publication date, retrieval date, SHA-256, and local filename after obtaining the assigned corpus."}
+{
+  "documents": [
+    {
+      "document": "RBI Integrated Ombudsman Scheme, 2021",
+      "version": "2021",
+      "publication_date": "2021-11-12",
+      "source_url": "https://rbidocs.rbi.org.in/rdocs/content/pdfs/RBIOS2021_121121.pdf",
+      "retrieval_date": "2026-10-27",
+      "sha256": "A354A73BC5A374661B8BDFB35A74501D17FD86EEEAC05D00E6004E6D64D69A3E",
+      "local_filename": "RBI_Integrated_Ombudsman_Scheme_2021.pdf"
+    },
+    {
+      "document": "RBI Integrated Ombudsman Scheme, 2026",
+      "version": "2026",
+      "effective_date": "2026-07-01",
+      "source_url": "https://rbidocs.rbi.org.in/rdocs/content/pdfs/SCHEME16012026_A.pdf",
+      "retrieval_date": "2026-10-27",
+      "sha256": "F119574982A073819D2286C3D016EF10E1FBEEBED8E23864E40E885D950901B6",
+      "local_filename": "RBI_Integrated_Ombudsman_Scheme_2026.pdf"
+    },
+    {
+      "document": "Master Circular on the Redressal of Investor Grievances through the SEBI Complaints Redress System (SCORES) Platform",
+      "version": "2022",
+      "publication_date": "2022-11-07",
+      "source_url": "https://www.sebi.gov.in/sebi_data/attachdocs/nov-2022/1667823350700.PDF",
+      "retrieval_date": "2026-10-27",
+      "sha256": "78A729D83966BAF738EABCBBD5FA1E70CDFDE929743416BA7A4E3567AFE25F8B",
+      "local_filename": "SEBI_Master_Circular_Investor_Grievances_2022.pdf"
+    },
+    {
+      "document": "Securities and Exchange Board of India (Mutual Funds) Regulations, 2026",
+      "version": "2026",
+      "publication_date": "2026-04-01",
+      "last_amended_date": "2026-10-10",
+      "source_url": "https://www.sebi.gov.in/web/?file=https%3A%2F%2Fwww.sebi.gov.in%2Fsebi_data%2Fattachdocs%2Foct-2026%2F1792659909505.pdf",
+      "retrieval_date": "2026-10-27",
+      "sha256": "F118288D8EA8481CD571D37739E1AFA7AE946A0AB78460E342405165DF8A6EEB",
+      "local_filename": "SEBI_Mutual_Funds_Regulations_2026.pdf"
+    }
+  ],
+  "note": "Corpus covers the three assigned regulatory sources. The RBI Integrated Ombudsman Scheme is retained in both its 2021 and 2026 versions for version-aware retrieval and provenance."
+}
