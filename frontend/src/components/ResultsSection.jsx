@@ -1,75 +1,121 @@
 import React from 'react';
 import { STATUS, isInProgress } from '../constants/status.js';
 import EmptyState from './EmptyState.jsx';
-import RecommendationCard from './RecommendationCard.jsx';
-import EvidenceCard from './EvidenceCard.jsx';
 import EscalationNotice from './EscalationNotice.jsx';
 
-// `result` is a UI view-model. It is NOT the backend schema. A future adapter
-// converts the API response into this shape:
-// {
-//   outcome: 'recommendation' | 'referral' | 'escalation',
-//   recommendation: { regulator, entity, routing, explanation, verified, humanReviewStatus },
-//   evidence: [{ passage, citation: { document, section, page } }],
-//   escalation: { reason },
-// }
 export default function ResultsSection({ status = STATUS.IDLE, result = null }) {
-  const evidence = result?.evidence ?? [];
-  const escalated = status === STATUS.HUMAN_REVIEW || result?.outcome === 'escalation';
-
-  let content;
   if (status === STATUS.IDLE) {
-    content = (
-      <EmptyState icon="search" title="No complaint submitted yet">
-        Submit a complaint above. The recommendation and its supporting evidence will appear here.
-      </EmptyState>
-    );
-  } else if (isInProgress(status)) {
-    content = (
-      <EmptyState icon="clock" tone="info" title="Investigation in progress">
-        Results appear once the evidence has been verified. Nothing is shown until then.
-      </EmptyState>
-    );
-  } else if (status === STATUS.FAILED) {
-    content = (
-      <EmptyState icon="alert" tone="danger" title="No result">
-        The investigation did not finish, so there is nothing to show. Nothing here should be treated as a
-        recommendation.
-      </EmptyState>
-    );
-  } else if (escalated) {
-    content = <EscalationNotice reason={result?.escalation?.reason} />;
-  } else if (evidence.length === 0) {
-    content = (
-      <EmptyState icon="doc" tone="warn" title="No verified evidence available">
-        No passage could be verified for this complaint, so no recommendation is shown. A grievance officer should review
-        it.
-      </EmptyState>
-    );
-  } else {
-    content = (
-      <>
-        <RecommendationCard
-          variant={result.outcome === 'referral' ? 'referral' : 'assign'}
-          {...result.recommendation}
-        />
-        <div className="evidence-list">
-          <h3>Supporting regulatory evidence</h3>
-          {evidence.map((item, index) => (
-            <EvidenceCard key={index} {...item} />
-          ))}
-        </div>
-      </>
+    return (
+      <section className="section" id="results">
+        <div className="section__head"><h2>Results</h2></div>
+        <EmptyState icon="search" title="No complaint submitted yet">
+          Submit a complaint above. Its recommendation and supporting evidence
+          will appear here.
+        </EmptyState>
+      </section>
     );
   }
 
+  if (isInProgress(status)) {
+    return (
+      <section className="section" id="results">
+        <div className="section__head"><h2>Results</h2></div>
+        <EmptyState icon="clock" tone="info" title="Investigation in progress">
+          The backend is processing your complaint. Please wait.
+        </EmptyState>
+      </section>
+    );
+  }
+
+  if (status === STATUS.FAILED) {
+    return (
+      <section className="section" id="results">
+        <div className="section__head"><h2>Results</h2></div>
+        <EmptyState icon="alert" tone="danger" title="No result available">
+          The investigation could not be completed.
+        </EmptyState>
+      </section>
+    );
+  }
+
+  if (!result) return null;
+
+  const citations = result.citations || [];
+  const needsReview =
+    result.human_review_required ||
+    status === STATUS.HUMAN_REVIEW;
+
   return (
-    <section className="section" id="results" aria-labelledby="results-title">
+    <section className="section" id="results">
       <div className="section__head">
-        <h2 id="results-title">Results</h2>
-        <p>Recommendations are shown only with evidence that has been checked.</p>
+        <h2>Investigation Results</h2>
+        <p>Backend-generated routing recommendation and supporting evidence.</p>
       </div>
-      <div className="results">{content}</div>
+
+      <div className="results">
+        {needsReview && (
+          <EscalationNotice
+            reason={
+              result.escalation_reason ||
+              'This complaint requires review by a grievance officer.'
+            }
+          />
+        )}
+
+        <div className="panel">
+          <h3>Routing recommendation</h3>
+          <p><strong>Status:</strong> {result.status || 'Not specified'}</p>
+          <p><strong>Route type:</strong> {result.route_type || 'Not specified'}</p>
+          <p>
+            <strong>Recommended regulator:</strong>{' '}
+            {result.recommended_regulator || 'No regulator recommendation'}
+          </p>
+          <p>
+            <strong>Responsible entity:</strong>{' '}
+            {result.responsible_entity || 'Not identified'}
+          </p>
+          <p><strong>Reason:</strong> {result.reason || 'Not provided'}</p>
+          {result.timeline && (
+            <p><strong>Timeline:</strong> {result.timeline}</p>
+          )}
+          <p>
+            <strong>Human review required:</strong>{' '}
+            {result.human_review_required ? 'Yes' : 'No'}
+          </p>
+        </div>
+
+        {result.escalation_reason && !needsReview && (
+          <div className="panel">
+            <h3>Escalation information</h3>
+            <p>{result.escalation_reason}</p>
+          </div>
+        )}
+
+        <div className="panel">
+          <h3>Supporting regulatory citations ({citations.length})</h3>
+          {citations.length === 0 ? (
+            <p>No regulatory citations were returned for this investigation.</p>
+          ) : (
+            citations.map((citation, index) => (
+              <article className="evidence-card" key={index}>
+                <h4>{citation.source_title}</h4>
+                <p><strong>Version:</strong> {citation.source_version}</p>
+                <p><strong>Section:</strong> {citation.section}</p>
+                <p>{citation.passage}</p>
+                {citation.source_url && (
+                  <a href={citation.source_url} target="_blank" rel="noreferrer">
+                    View source
+                  </a>
+                )}
+              </article>
+            ))
+          )}
+        </div>
+
+        <p className="field__hint">
+          Run ID: {result.run_id || 'Unavailable'}
+        </p>
+      </div>
     </section>
   );
 }

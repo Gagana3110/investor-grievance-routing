@@ -1,33 +1,71 @@
 import { useCallback, useState } from 'react';
 import { STATUS } from '../constants/status.js';
-import { submitComplaint, NotConnectedError } from '../api/client.js';
+import { submitComplaint, getRun } from '../api/client.js';
 
-// Owns the investigation lifecycle for the UI. Components only read
-// { status, errorMessage, result } and call submit() / reset().
-//
-// `result` is a view-model for ResultsSection (see that file for its shape).
-// When the backend contract is agreed, write one adapter that converts the
-// API response into that view-model and call setResult() with it here.
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export function useInvestigation() {
   const [status, setStatus] = useState(STATUS.IDLE);
   const [errorMessage, setErrorMessage] = useState('');
   const [result, setResult] = useState(null);
 
-  const submit = useCallback(async (text) => {
+  const submit = useCallback(async (formData) => {
     setErrorMessage('');
     setResult(null);
     setStatus(STATUS.SUBMITTING);
+
     try {
-      await submitComplaint({ text });
-      // TODO: with the real API, store the run id, then poll getRun(runId):
-      //   setStatus(STATUS.QUEUED) -> INVESTIGATING -> VERIFYING ->
-      //   COMPLETED or HUMAN_REVIEW, and call setResult(adapter(response)).
+      const submission = await submitComplaint({
+        complaint_text: formData.complaint_text,
+        product_type: formData.product_type || null,
+        entity_name: formData.entity_name || null,
+        entity_type: formData.entity_type || null,
+        consent_to_process: formData.consent_to_process,
+      });
+
+      const runId = submission.run_id;
+
+      if (!runId) {
+        throw new Error('The server did not return an investigation ID.');
+      }
+
+      setStatus(STATUS.QUEUED);
+
+      for (let attempt = 0; attempt < 90; attempt += 1) {
+        await delay(2000);
+
+        const run = await getRun(runId);
+
+        if (run.status === 'completed') {
+          setResult({
+            ...run.result,
+            run_id: runId,
+          });
+
+          setStatus(
+            run.result?.human_review_required
+              ? STATUS.HUMAN_REVIEW
+              : STATUS.COMPLETED
+          );
+          return;
+        }
+
+        if (run.status === 'failed') {
+          throw new Error(
+            run.error || 'The investigation could not be completed.'
+          );
+        }
+
+        setStatus(STATUS.INVESTIGATING);
+      }
+
+      throw new Error(
+        'The investigation is taking longer than expected. Please try again.'
+      );
     } catch (error) {
       setStatus(STATUS.FAILED);
       setErrorMessage(
-        error instanceof NotConnectedError
-          ? 'The analysis service is not connected to this page yet, so no investigation was started.'
-          : 'The service could not be reached. Check your connection and try again.'
+        error.message || 'The service could not be reached. Please try again.'
       );
     }
   }, []);

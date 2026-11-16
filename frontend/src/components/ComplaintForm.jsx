@@ -1,29 +1,51 @@
 import React, { useRef, useState } from 'react';
 import Icon from './Icon.jsx';
 
-export const MAX_LENGTH = 4000; // Placeholder limit. Align with the backend data contract.
+export const MAX_LENGTH = 8000;
+
+const ENTITY_TYPES = [
+  ['broker', 'Broker'],
+  ['mutual_fund', 'Mutual fund'],
+  ['registrar', 'Registrar'],
+  ['listed_company', 'Listed company'],
+  ['depository', 'Depository'],
+  ['bank_or_other', 'Bank / Other'],
+  ['unknown', 'Unknown'],
+];
 
 export default function ComplaintForm({ onSubmit, busy = false }) {
   const [text, setText] = useState('');
+  const [productType, setProductType] = useState('');
+  const [entityName, setEntityName] = useState('');
+  const [entityType, setEntityType] = useState('');
+  const [consent, setConsent] = useState(false);
   const [error, setError] = useState('');
   const textareaRef = useRef(null);
-
-  const nearLimit = text.length >= MAX_LENGTH * 0.9;
-
-  function handleChange(event) {
-    setText(event.target.value);
-    if (error) setError('');
-  }
 
   function handleSubmit(event) {
     event.preventDefault();
     if (busy) return;
-    if (text.trim().length === 0) {
-      setError('Enter your complaint before analysing it. Describe what happened and which firm or product was involved.');
+
+    if (text.trim().length < 20) {
+      setError('Please enter at least 20 characters describing your complaint.');
       textareaRef.current?.focus();
       return;
     }
-    onSubmit(text.trim());
+
+    if (!consent) {
+      setError('Please provide consent before submitting your complaint.');
+      return;
+    }
+
+    setError('');
+
+    onSubmit({
+      complaint_text: text.trim(),
+      product_type: productType.trim(),
+      entity_name: entityName.trim(),
+      entity_type: entityType || null,
+      consent_to_process: true,
+    });
   }
 
   return (
@@ -33,7 +55,7 @@ export default function ComplaintForm({ onSubmit, busy = false }) {
           Describe your complaint
         </label>
         <p className="field__hint" id="complaint-hint">
-          Write it as you would to a regulator. Use a synthetic or anonymised example. Do not enter names, account
+          Use a synthetic or anonymised example. Do not enter names, account
           numbers, PAN or other personal or financial details.
         </p>
         <textarea
@@ -41,28 +63,97 @@ export default function ComplaintForm({ onSubmit, busy = false }) {
           ref={textareaRef}
           className="field__textarea"
           value={text}
-          onChange={handleChange}
+          onChange={(e) => setText(e.target.value)}
           maxLength={MAX_LENGTH}
           rows={9}
-          placeholder="What happened, which firm or product was involved, and what outcome you want."
-          aria-invalid={error ? 'true' : 'false'}
-          aria-describedby={error ? 'complaint-hint complaint-error' : 'complaint-hint'}
+          minLength={20}
+          placeholder="Describe what happened, which firm or product was involved, and what outcome you want."
+          aria-describedby="complaint-hint"
           disabled={busy}
+          required
         />
-        {error && (
-          <p className="field__error" id="complaint-error" role="alert">
-            <Icon name="alert" size={18} />
-            <span>{error}</span>
-          </p>
-        )}
-      </div>
-
-      <div className="complaint-form__footer">
-        <p className={`counter${nearLimit ? ' counter--near' : ''}`} aria-live="polite">
+        <p className="counter" aria-live="polite">
           {text.length.toLocaleString()} / {MAX_LENGTH.toLocaleString()} characters
         </p>
-        <button className="button" type="submit" disabled={busy} aria-busy={busy}>
-          {busy && <span className="spinner" aria-hidden="true" />}
+      </div>
+
+      <div className="field">
+        <label className="field__label" htmlFor="product-type">
+          Product type (optional)
+        </label>
+        <input
+          id="product-type"
+          className="field__input"
+          value={productType}
+          onChange={(e) => setProductType(e.target.value)}
+          maxLength={120}
+          placeholder="e.g. Mutual fund, fixed deposit, shares"
+          disabled={busy}
+        />
+      </div>
+
+      <div className="field">
+        <label className="field__label" htmlFor="entity-name">
+          Entity name (optional)
+        </label>
+        <input
+          id="entity-name"
+          className="field__input"
+          value={entityName}
+          onChange={(e) => setEntityName(e.target.value)}
+          maxLength={200}
+          placeholder="e.g. Example Bank"
+          disabled={busy}
+        />
+      </div>
+
+      <div className="field">
+        <label className="field__label" htmlFor="entity-type">
+          Entity type (optional)
+        </label>
+        <select
+          id="entity-type"
+          className="field__input"
+          value={entityType}
+          onChange={(e) => setEntityType(e.target.value)}
+          disabled={busy}
+        >
+          <option value="">Select entity type</option>
+          {ENTITY_TYPES.map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="field">
+        <label className="field__label">
+          <input
+            type="checkbox"
+            checked={consent}
+            onChange={(e) => setConsent(e.target.checked)}
+            disabled={busy}
+          />{' '}
+          I consent to processing this complaint for the purpose of this
+          demonstration.
+        </label>
+      </div>
+
+      {error && (
+        <p className="field__error" role="alert">
+          <Icon name="alert" size={18} />
+          <span>{error}</span>
+        </p>
+      )}
+
+      <div className="complaint-form__footer">
+        <button
+          className="button"
+          type="submit"
+          disabled={busy}
+          aria-busy={busy}
+        >
           {busy ? 'Analyzing…' : 'Analyze Complaint'}
         </button>
       </div>
@@ -70,8 +161,8 @@ export default function ComplaintForm({ onSubmit, busy = false }) {
       <p className="disclaimer">
         <Icon name="shield" size={18} />
         <span>
-          This service gives routing recommendations for human review. It does not make final regulatory decisions, and
-          a grievance officer decides every complaint.
+          This service provides routing recommendations for human review. It
+          does not make final regulatory decisions.
         </span>
       </p>
     </form>
